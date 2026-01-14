@@ -1,0 +1,4 @@
+/.direnv
+/.envrc.local
+.env
+.DS_Store

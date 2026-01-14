@@ -1,0 +1,13 @@
+{
+    "fmt": {
+        "lineWidth": 140,
+        "indentWidth": 4
+    },
+    "imports": {
+        "@hono/hono": "jsr:@hono/hono@^4.11.4",
+        "@hono/mcp": "jsr:@hono/mcp@^0.2.0",
+        "@modelcontextprotocol/sdk": "npm:@modelcontextprotocol/sdk@1.25.2",
+        "@std/log": "jsr:@std/log@^0.224.14",
+        "@zod/zod": "npm:zod@^3.25.76"
+    }
+}
