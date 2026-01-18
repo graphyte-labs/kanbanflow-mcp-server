@@ -60,5 +60,5 @@ jobs:
           cache-from: "type=gha"
           cache-to: "type=gha,mode=max"
           build-args: |
-            MCP_SERVER_VERSION=${GITHUB_REF#refs/tags/}
+            MCP_SERVER_VERSION=${{ github.ref_name }}
             MCP_SERVER_COMMIT=${{ github.sha }}
