@@ -10,6 +10,22 @@ Set your KanbanFlow API key:
 export KANBANFLOW_API_KEY="your-api-key-here"
 ```
 
+### Authentication (Optional)
+
+To secure the MCP endpoint, set an authentication token:
+
+```bash
+export MCP_SERVER_AUTH_TOKEN="your-secret-token"
+```
+
+When configured, clients must include the token in the `Authorization` header:
+
+```
+Authorization: Bearer your-secret-token
+```
+
+If no token is set, authentication is disabled.
+
 ## Run
 
 ```bash
@@ -30,29 +46,35 @@ Server starts at `http://127.0.0.1:3000`
 ## TODO
 
 ### Task Management
+
 - [ ] `createTask` - Create a new task
 - [ ] `updateTask` - Update an existing task
 - [ ] `deleteTask` - Delete a task
 - [ ] `moveTask` - Move a task to a different column/position
 
 ### Subtasks
+
 - [ ] `createSubtask` - Add a subtask to a task
 - [ ] `updateSubtask` - Update a subtask
 - [ ] `deleteSubtask` - Delete a subtask
 
 ### Collaborators
+
 - [ ] `addCollaborator` - Add a collaborator to a task
 - [ ] `removeCollaborator` - Remove a collaborator from a task
 
 ### Comments
+
 - [ ] `addComment` - Add a comment to a task
 - [ ] `getComments` - Get comments for a task
 - [ ] `deleteComment` - Delete a comment
 
 ### Users
+
 - [ ] `getUsers` - Get all users on the board
 
 ### Time Tracking (Pomodoro)
+
 - [ ] `startTimer` - Start a Pomodoro timer for a task
 - [ ] `stopTimer` - Stop the current timer
 - [ ] `getTimeEntries` - Get time entries for a task
@@ -61,6 +83,7 @@ Server starts at `http://127.0.0.1:3000`
 ## Contributing
 
 Contributions are welcome! Feel free to:
+
 - Implement missing API methods from the TODO list
 - Fix bugs or improve existing functionality
 - Enhance documentation

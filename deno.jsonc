@@ -2,7 +2,7 @@
     "fmt": {
         "lineWidth": 140,
         "indentWidth": 4,
-        "exclude": [".github"]
+        "exclude": [".github", "README.md"]
     },
     "imports": {
         "@hono/hono": "jsr:@hono/hono@^4.11.4",
