@@ -1,0 +1,28 @@
+# Git
+.git
+.gitignore
+
+# Development
+.cursor
+.vscode
+.idea
+
+# Documentation
+*.md
+docs/
+
+# Docker
+docker/
+Dockerfile
+.dockerignore
+
+# Environment
+.env
+.envrc
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
