@@ -57,3 +57,17 @@ Server starts at `http://127.0.0.1:3000`
 - [ ] `stopTimer` - Stop the current timer
 - [ ] `getTimeEntries` - Get time entries for a task
 - [ ] `deleteTimeEntry` - Delete a time entry
+
+## Contributing
+
+Contributions are welcome! Feel free to:
+- Implement missing API methods from the TODO list
+- Fix bugs or improve existing functionality
+- Enhance documentation
+- Report issues or suggest features
+
+Please open an issue or submit a pull request on GitHub.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
