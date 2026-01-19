@@ -48,73 +48,43 @@ mcpServer.registerTool(
 mcpServer.registerTool(
     "getAllTasks",
     {
-        description: "Get all tasks from Kanbanflow",
-        inputSchema: {},
-    },
-    async () => {
-        try {
-            logger.info("mcp tool invoked", { tool: "getAllTasks" });
-            const tasks = await client.getTasks();
-            const totalTasks = tasks.reduce((sum, col) => sum + col.tasks.length, 0);
-            logger.info("mcp tool succeeded", {
-                tool: "getAllTasks",
-                columnsCount: tasks.length,
-                totalTasks,
-            });
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: JSON.stringify(tasks, null, 2),
-                    },
-                ],
-            };
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            logger.error("mcp tool failed", { tool: "getAllTasks", error: errorMessage });
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: `Error fetching tasks: ${errorMessage}`,
-                    },
-                ],
-                isError: true,
-            };
-        }
-    },
-);
-
-mcpServer.registerTool(
-    "getTasksByColumn",
-    {
-        description: "Get tasks filtered by column from Kanbanflow. You can filter by columnId, columnName, or columnIndex",
+        description: "Get tasks from Kanbanflow. Without filters, returns all tasks. Use filters to narrow results or enable pagination.",
         inputSchema: {
             columnId: z.string().optional().describe("Filter by column ID"),
             columnName: z.string().optional().describe("Filter by column name"),
             columnIndex: z.number().optional().describe("Filter by column index (0-based)"),
-            limit: z.number().optional().describe("Limit the number of tasks returned"),
-            order: z.enum(["asc", "desc"]).optional().describe("Order of tasks (asc or desc)"),
+            startTaskId: z.string().optional().describe("Task ID to start pagination from (use nextTaskId from previous response)"),
+            limit: z.number().optional().describe("Maximum number of tasks to return (enables pagination)"),
+            order: z.enum(["asc", "desc"]).optional().describe("Sort order (asc or desc)"),
             includePosition: z.boolean().optional().describe("Include task position in the column"),
         },
     },
     async (args) => {
         try {
-            logger.info("mcp tool invoked", { tool: "getTasksByColumn", args });
+            logger.info("mcp tool invoked", { tool: "getAllTasks", args });
+
             const tasks = await client.getTasks({
                 columnId: args.columnId,
                 columnName: args.columnName,
                 columnIndex: args.columnIndex,
+                startTaskId: args.startTaskId,
                 limit: args.limit,
                 order: args.order,
                 includePosition: args.includePosition,
             });
+
             const totalTasks = tasks.reduce((sum, col) => sum + col.tasks.length, 0);
+            const hasMore = tasks.some((col) => col.tasksLimited);
+            const nextTaskId = tasks.find((col) => col.nextTaskId)?.nextTaskId;
+
             logger.info("mcp tool succeeded", {
-                tool: "getTasksByColumn",
+                tool: "getAllTasks",
                 columnsCount: tasks.length,
                 totalTasks,
+                hasMore,
+                nextTaskId,
             });
+
             return {
                 content: [
                     {
@@ -122,19 +92,26 @@ mcpServer.registerTool(
                         text: JSON.stringify(tasks, null, 2),
                     },
                 ],
+                _meta: {
+                    pagination: {
+                        hasMore,
+                        nextTaskId: nextTaskId || null,
+                        totalReturned: totalTasks,
+                        limit: args.limit || null,
+                        columnId: args.columnId || null,
+                        columnName: args.columnName || null,
+                        columnIndex: args.columnIndex !== undefined ? args.columnIndex : null,
+                    },
+                },
             };
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            logger.error("mcp tool failed", {
-                tool: "getTasksByColumn",
-                error: errorMessage,
-                args,
-            });
+            logger.error("mcp tool failed", { tool: "getAllTasks", error: errorMessage, args });
             return {
                 content: [
                     {
                         type: "text",
-                        text: `Error fetching tasks by column: ${errorMessage}`,
+                        text: `Error fetching tasks: ${errorMessage}`,
                     },
                 ],
                 isError: true,
