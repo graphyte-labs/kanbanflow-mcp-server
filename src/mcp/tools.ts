@@ -46,7 +46,7 @@ mcpServer.registerTool(
 );
 
 mcpServer.registerTool(
-    "getAllTasks",
+    "getTasks",
     {
         description: "Get tasks from Kanbanflow. Without filters, returns all tasks. Use filters to narrow results or enable pagination.",
         inputSchema: {
@@ -61,7 +61,7 @@ mcpServer.registerTool(
     },
     async (args) => {
         try {
-            logger.info("mcp tool invoked", { tool: "getAllTasks", args });
+            logger.info("mcp tool invoked", { tool: "getTasks", args });
 
             const tasks = await client.getTasks({
                 columnId: args.columnId,
@@ -77,36 +77,44 @@ mcpServer.registerTool(
             const hasMore = tasks.some((col) => col.tasksLimited);
             const nextTaskId = tasks.find((col) => col.nextTaskId)?.nextTaskId;
 
+            // Check if any filtering is applied
+            const hasFilters = args.columnId || args.columnName || args.columnIndex !== undefined;
+
             logger.info("mcp tool succeeded", {
-                tool: "getAllTasks",
+                tool: "getTasks",
                 columnsCount: tasks.length,
                 totalTasks,
                 hasMore,
                 nextTaskId,
+                hasFilters,
             });
 
-            return {
+            const response = {
                 content: [
                     {
-                        type: "text",
+                        type: "text" as const,
                         text: JSON.stringify(tasks, null, 2),
                     },
                 ],
-                _meta: {
-                    pagination: {
-                        hasMore,
-                        nextTaskId: nextTaskId || null,
-                        totalReturned: totalTasks,
-                        limit: args.limit || null,
-                        columnId: args.columnId || null,
-                        columnName: args.columnName || null,
-                        columnIndex: args.columnIndex !== undefined ? args.columnIndex : null,
+                ...(hasFilters && {
+                    _meta: {
+                        pagination: {
+                            hasMore,
+                            nextTaskId: nextTaskId || null,
+                            totalReturned: totalTasks,
+                            limit: args.limit || null,
+                            columnId: args.columnId || null,
+                            columnName: args.columnName || null,
+                            columnIndex: args.columnIndex !== undefined ? args.columnIndex : null,
+                        },
                     },
-                },
+                }),
             };
+
+            return response;
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            logger.error("mcp tool failed", { tool: "getAllTasks", error: errorMessage, args });
+            logger.error("mcp tool failed", { tool: "getTasks", error: errorMessage, args });
             return {
                 content: [
                     {
