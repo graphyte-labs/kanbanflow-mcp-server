@@ -1,6 +1,6 @@
 FROM denoland/deno:alpine-2.6.4
 
-ARG MCP_SERVER_VERSION="v0.0.0"
+ARG MCP_SERVER_VERSION="0.0.0-dev"
 ARG MCP_SERVER_COMMIT="unknown"
 
 LABEL org.opencontainers.image.title="KanbanFlow MCP Server"

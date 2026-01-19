@@ -45,7 +45,8 @@ jobs:
         with:
           images: "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
           tags: |
-            type=ref,event=tag
+            type=semver,pattern={{version}}
+            type=sha,format=long
 
       - id: "build"
         name: "Build and push Docker image"
@@ -60,5 +61,5 @@ jobs:
           cache-from: "type=gha"
           cache-to: "type=gha,mode=max"
           build-args: |
-            MCP_SERVER_VERSION=${{ github.ref_name }}
+            MCP_SERVER_VERSION=${{ steps.meta.outputs.version }}
             MCP_SERVER_COMMIT=${{ github.sha }}
