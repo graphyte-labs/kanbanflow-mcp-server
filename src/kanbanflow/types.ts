@@ -9,12 +9,16 @@ import {
     TaskSchema,
     TasksColumnResponseSchema,
     TasksResponseSchema,
+    UserSchema,
+    UsersResponseSchema,
 } from "./schemas.ts";
 
 // Main types
 export type Task = z.infer<typeof TaskSchema>;
 export type Board = z.infer<typeof BoardResponseSchema>;
 export type TasksResponse = z.infer<typeof TasksResponseSchema>;
+export type User = z.infer<typeof UserSchema>;
+export type UsersResponse = z.infer<typeof UsersResponseSchema>;
 
 // Sub-schema types
 export type TaskNumber = z.infer<typeof TaskNumberSchema>;

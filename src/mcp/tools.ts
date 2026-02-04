@@ -173,3 +173,41 @@ mcpServer.registerTool(
         }
     },
 );
+
+mcpServer.registerTool(
+    "getUsers",
+    {
+        description: "Get all users on the board from Kanbanflow",
+        inputSchema: {},
+    },
+    async () => {
+        try {
+            logger.info("mcp tool invoked", { tool: "getUsers" });
+            const users = await client.getUsers();
+            logger.info("mcp tool succeeded", {
+                tool: "getUsers",
+                userCount: users.length,
+            });
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: JSON.stringify(users, null, 2),
+                    },
+                ],
+            };
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            logger.error("mcp tool failed", { tool: "getUsers", error: errorMessage });
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: `Error fetching users: ${errorMessage}`,
+                    },
+                ],
+                isError: true,
+            };
+        }
+    },
+);

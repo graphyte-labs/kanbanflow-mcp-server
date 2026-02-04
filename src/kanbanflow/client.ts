@@ -1,7 +1,7 @@
 import { z } from "@zod/zod";
 import { config } from "../config.ts";
-import { BoardResponseSchema, TaskSchema, TasksResponseSchema } from "./schemas.ts";
-import type { Board, GetTasksOptions, Task, TasksResponse } from "./types.ts";
+import { BoardResponseSchema, TaskSchema, TasksResponseSchema, UsersResponseSchema } from "./schemas.ts";
+import type { Board, GetTasksOptions, Task, TasksResponse, UsersResponse } from "./types.ts";
 
 /**
  * Simple HTTP client for KanbanFlow API
@@ -138,6 +138,21 @@ export class KanbanFlowClient {
 
             const data = await this.request<unknown>(path);
             return TaskSchema.parse(data);
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                throw new Error(`Invalid response format: ${error.message}`);
+            }
+            throw error;
+        }
+    }
+
+    /**
+     * Gets all users on the board
+     */
+    async getUsers(): Promise<UsersResponse> {
+        try {
+            const data = await this.request<unknown>("/users");
+            return UsersResponseSchema.parse(data);
         } catch (error) {
             if (error instanceof z.ZodError) {
                 throw new Error(`Invalid response format: ${error.message}`);

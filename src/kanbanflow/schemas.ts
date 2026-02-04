@@ -63,3 +63,12 @@ export const TasksColumnResponseSchema = z.object({
 });
 
 export const TasksResponseSchema = z.array(TasksColumnResponseSchema).describe("Array of column responses with tasks");
+
+export const UserSchema = z.object({
+    _id: z.string().describe("The unique ID of the user"),
+    fullName: z.string().describe("The full name of the user"),
+    email: z.string().email().describe("The email address of the user"),
+    role: z.string().optional().describe("The role of the user (e.g., admin, member)"),
+});
+
+export const UsersResponseSchema = z.array(UserSchema).describe("Array of users on the board");

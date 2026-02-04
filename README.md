@@ -41,6 +41,7 @@ Server starts at `http://127.0.0.1:3000`
 - `getBoard` - Get board structure (columns, swimlanes, colors)
 - `getTasks` - Get tasks with optional filtering and pagination
 - `getTaskById` - Get specific task by ID
+- `getUsers` - Get all users on the board
 
 ## TODO
 
@@ -70,7 +71,7 @@ Server starts at `http://127.0.0.1:3000`
 
 ### Users
 
-- [ ] `getUsers` - Get all users on the board
+- [x] `getUsers` - Get all users on the board
 
 ### Time Tracking (Pomodoro)
 
