@@ -42,6 +42,7 @@ Server starts at `http://127.0.0.1:3000`
 - `getTasks` - Get tasks with optional filtering and pagination
 - `getTaskById` - Get specific task by ID
 - `getUsers` - Get all users on the board
+- `getComments` - Get all comments for a specific task
 
 ## TODO
 
@@ -66,7 +67,7 @@ Server starts at `http://127.0.0.1:3000`
 ### Comments
 
 - [ ] `addComment` - Add a comment to a task
-- [ ] `getComments` - Get comments for a task
+- [x] `getComments` - Get comments for a task
 - [ ] `deleteComment` - Delete a comment
 
 ### Users

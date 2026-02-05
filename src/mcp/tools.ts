@@ -211,3 +211,48 @@ mcpServer.registerTool(
         }
     },
 );
+
+mcpServer.registerTool(
+    "getComments",
+    {
+        description: "Get all comments for a specific task from Kanbanflow",
+        inputSchema: {
+            taskId: z.string().describe("The ID of the task to get comments for"),
+        },
+    },
+    async (args) => {
+        try {
+            logger.info("mcp tool invoked", { tool: "getComments", taskId: args.taskId });
+            const comments = await client.getComments(args.taskId);
+            logger.info("mcp tool succeeded", {
+                tool: "getComments",
+                taskId: args.taskId,
+                commentCount: comments.length,
+            });
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: JSON.stringify(comments, null, 2),
+                    },
+                ],
+            };
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            logger.error("mcp tool failed", {
+                tool: "getComments",
+                error: errorMessage,
+                taskId: args.taskId,
+            });
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: `Error fetching comments for task ${args.taskId}: ${errorMessage}`,
+                    },
+                ],
+                isError: true,
+            };
+        }
+    },
+);

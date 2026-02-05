@@ -4,6 +4,8 @@ import {
     BoardColumnSchema,
     BoardResponseSchema,
     BoardSwimlaneSchema,
+    CommentSchema,
+    CommentsResponseSchema,
     TaskCollaboratorSchema,
     TaskNumberSchema,
     TaskSchema,
@@ -19,6 +21,8 @@ export type Board = z.infer<typeof BoardResponseSchema>;
 export type TasksResponse = z.infer<typeof TasksResponseSchema>;
 export type User = z.infer<typeof UserSchema>;
 export type UsersResponse = z.infer<typeof UsersResponseSchema>;
+export type Comment = z.infer<typeof CommentSchema>;
+export type CommentsResponse = z.infer<typeof CommentsResponseSchema>;
 
 // Sub-schema types
 export type TaskNumber = z.infer<typeof TaskNumberSchema>;

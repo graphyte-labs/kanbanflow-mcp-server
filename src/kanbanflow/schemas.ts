@@ -72,3 +72,12 @@ export const UserSchema = z.object({
 });
 
 export const UsersResponseSchema = z.array(UserSchema).describe("Array of users on the board");
+
+export const CommentSchema = z.object({
+    _id: z.string().describe("The unique ID of the comment"),
+    text: z.string().describe("The comment text"),
+    createdTimestamp: z.string().describe("ISO 8601 timestamp when comment was created"),
+    authorUserId: z.string().describe("The ID of the user who created the comment"),
+});
+
+export const CommentsResponseSchema = z.array(CommentSchema).describe("Array of comments for a task");
