@@ -39,10 +39,12 @@ Server starts at `http://127.0.0.1:3000`
 > **Note:** This MCP server currently provides basic read-only tools for KanbanFlow. Many API methods are not yet implemented - see the TODO section below for planned features.
 
 - `getBoard` - Get board structure (columns, swimlanes, colors)
-- `getTasks` - Get tasks with optional filtering and pagination
-- `getTaskById` - Get specific task by ID
+- `getTasks` - Get tasks with optional filtering, pagination, and user resolution
+- `getTaskById` - Get specific task by ID with optional user resolution
 - `getUsers` - Get all users on the board
-- `getComments` - Get all comments for a specific task
+- `getComments` - Get all comments for a task with optional user resolution
+
+All tools that return user IDs support an optional `resolveUsers` parameter to enrich responses with user names.
 
 ## TODO
 

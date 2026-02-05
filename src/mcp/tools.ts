@@ -2,9 +2,11 @@ import { z } from "@zod/zod";
 import { mcpServer } from "./mod.ts";
 import { logger } from "../utils/mod.ts";
 import { KanbanFlowClient } from "../kanbanflow/mod.ts";
+import { UserResolver } from "./user-resolver.ts";
 
 // Create a shared client instance
 const client = new KanbanFlowClient();
+const userResolver = new UserResolver(client);
 
 mcpServer.registerTool(
     "getBoard",
@@ -57,13 +59,14 @@ mcpServer.registerTool(
             limit: z.number().optional().describe("Maximum number of tasks to return (enables pagination)"),
             order: z.enum(["asc", "desc"]).optional().describe("Sort order (asc or desc)"),
             includePosition: z.boolean().optional().describe("Include task position in the column"),
+            resolveUsers: z.boolean().optional().describe("Resolve user IDs to names"),
         },
     },
     async (args) => {
         try {
             logger.info("mcp tool invoked", { tool: "getTasks", args });
 
-            const tasks = await client.getTasks({
+            let tasks = await client.getTasks({
                 columnId: args.columnId,
                 columnName: args.columnName,
                 columnIndex: args.columnIndex,
@@ -72,6 +75,12 @@ mcpServer.registerTool(
                 order: args.order,
                 includePosition: args.includePosition,
             });
+
+            // Resolve user IDs if requested
+            if (args.resolveUsers) {
+                tasks = await userResolver.enrichTasks(tasks);
+                logger.info("mcp data enriched with users", { tool: "getTasks" });
+            }
 
             const totalTasks = tasks.reduce((sum, col) => sum + col.tasks.length, 0);
             const hasMore = tasks.some((col) => col.tasksLimited);
@@ -87,6 +96,7 @@ mcpServer.registerTool(
                 hasMore,
                 nextTaskId,
                 hasFilters,
+                usersResolved: args.resolveUsers ?? false,
             });
 
             const response = {
@@ -135,16 +145,25 @@ mcpServer.registerTool(
         inputSchema: {
             taskId: z.string().describe("The ID of the task to retrieve"),
             includePosition: z.boolean().optional().describe("Include the task's position in the column"),
+            resolveUsers: z.boolean().optional().describe("Resolve user IDs to names"),
         },
     },
     async (args) => {
         try {
             logger.info("mcp tool invoked", { tool: "getTaskById", taskId: args.taskId });
-            const task = await client.getTaskById(args.taskId, args.includePosition ?? false);
+            let task = await client.getTaskById(args.taskId, args.includePosition ?? false);
+
+            // Resolve user IDs if requested
+            if (args.resolveUsers) {
+                task = await userResolver.enrichTask(task);
+                logger.info("mcp data enriched with users", { tool: "getTaskById" });
+            }
+
             logger.info("mcp tool succeeded", {
                 tool: "getTaskById",
                 taskId: args.taskId,
                 taskName: task.name,
+                usersResolved: args.resolveUsers ?? false,
             });
             return {
                 content: [
@@ -218,16 +237,25 @@ mcpServer.registerTool(
         description: "Get all comments for a specific task from Kanbanflow",
         inputSchema: {
             taskId: z.string().describe("The ID of the task to get comments for"),
+            resolveUsers: z.boolean().optional().describe("Resolve user IDs to names"),
         },
     },
     async (args) => {
         try {
             logger.info("mcp tool invoked", { tool: "getComments", taskId: args.taskId });
-            const comments = await client.getComments(args.taskId);
+            let comments = await client.getComments(args.taskId);
+
+            // Resolve user IDs if requested
+            if (args.resolveUsers) {
+                comments = await userResolver.enrichComments(comments);
+                logger.info("mcp data enriched with users", { tool: "getComments" });
+            }
+
             logger.info("mcp tool succeeded", {
                 tool: "getComments",
                 taskId: args.taskId,
                 commentCount: comments.length,
+                usersResolved: args.resolveUsers ?? false,
             });
             return {
                 content: [
