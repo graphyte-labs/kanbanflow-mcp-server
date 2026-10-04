@@ -1,2 +1,1 @@
-export { mcpRouter, mcpServer } from "./server.ts";
-export * from "./tools.ts";
+export { mcpRouter } from "./server.ts";

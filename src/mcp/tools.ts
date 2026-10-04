@@ -1,5 +1,5 @@
 import { z } from "@zod/zod";
-import { mcpServer } from "./mod.ts";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { logger } from "../utils/mod.ts";
 import { KanbanFlowClient } from "../kanbanflow/mod.ts";
 import { UserResolver } from "./user-resolver.ts";
@@ -8,281 +8,286 @@ import { UserResolver } from "./user-resolver.ts";
 const client = new KanbanFlowClient();
 const userResolver = new UserResolver(client);
 
-mcpServer.registerTool(
-    "getBoard",
-    {
-        description: "Get the board structure including columns, swimlanes, and colors from Kanbanflow",
-        inputSchema: {},
-    },
-    async () => {
-        try {
-            logger.info("mcp tool invoked", { tool: "getBoard" });
-            const board = await client.getBoard();
-            logger.info("mcp tool succeeded", {
-                tool: "getBoard",
-                columnsCount: board.columns.length,
-                swimlanesCount: board.swimlanes?.length ?? 0,
-            });
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: JSON.stringify(board, null, 2),
-                    },
-                ],
-            };
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            logger.error("mcp tool failed", { tool: "getBoard", error: errorMessage });
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: `Error fetching board: ${errorMessage}`,
-                    },
-                ],
-                isError: true,
-            };
-        }
-    },
-);
-
-mcpServer.registerTool(
-    "getTasks",
-    {
-        description: "Get tasks from Kanbanflow. Without filters, returns all tasks. Use filters to narrow results or enable pagination.",
-        inputSchema: {
-            columnId: z.string().optional().describe("Filter by column ID"),
-            columnName: z.string().optional().describe("Filter by column name"),
-            columnIndex: z.number().optional().describe("Filter by column index (0-based)"),
-            startTaskId: z.string().optional().describe("Task ID to start pagination from (use nextTaskId from previous response)"),
-            startGroupingDate: z.string().optional().describe("Start date for date-grouped columns (YYYY-MM-DD format, cannot be combined with startTaskId)"),
-            limit: z.number().optional().describe("Maximum number of tasks to return (enables pagination)"),
-            order: z.enum(["asc", "desc"]).optional().describe("Sort order (asc or desc)"),
-            includePosition: z.boolean().optional().describe("Include task position in the column"),
-            resolveUsers: z.boolean().optional().describe("Resolve user IDs to names"),
+export function registerTools(server: McpServer) {
+    server.registerTool(
+        "getBoard",
+        {
+            description: "Get the board structure including columns, swimlanes, and colors from Kanbanflow",
+            inputSchema: {},
         },
-    },
-    async (args) => {
-        try {
-            logger.info("mcp tool invoked", { tool: "getTasks", args });
-
-            let tasks = await client.getTasks({
-                columnId: args.columnId,
-                columnName: args.columnName,
-                columnIndex: args.columnIndex,
-                startTaskId: args.startTaskId,
-                startGroupingDate: args.startGroupingDate,
-                limit: args.limit,
-                order: args.order,
-                includePosition: args.includePosition,
-            });
-
-            // Resolve user IDs if requested
-            if (args.resolveUsers) {
-                tasks = await userResolver.enrichTasks(tasks);
-                logger.info("mcp data enriched with users", { tool: "getTasks" });
-            }
-
-            const totalTasks = tasks.reduce((sum, col) => sum + col.tasks.length, 0);
-            const hasMore = tasks.some((col) => col.tasksLimited);
-            const nextTaskId = tasks.find((col) => col.nextTaskId)?.nextTaskId;
-
-            // Check if any filtering is applied
-            const hasFilters = args.columnId || args.columnName || args.columnIndex !== undefined;
-
-            logger.info("mcp tool succeeded", {
-                tool: "getTasks",
-                columnsCount: tasks.length,
-                totalTasks,
-                hasMore,
-                nextTaskId,
-                hasFilters,
-                usersResolved: args.resolveUsers ?? false,
-            });
-
-            const response = {
-                content: [
-                    {
-                        type: "text" as const,
-                        text: JSON.stringify(tasks, null, 2),
-                    },
-                ],
-                ...(hasFilters && {
-                    _meta: {
-                        pagination: {
-                            hasMore,
-                            nextTaskId: nextTaskId || null,
-                            totalReturned: totalTasks,
-                            limit: args.limit || null,
-                            columnId: args.columnId || null,
-                            columnName: args.columnName || null,
-                            columnIndex: args.columnIndex !== undefined ? args.columnIndex : null,
+        async () => {
+            try {
+                logger.info("mcp tool invoked", { tool: "getBoard" });
+                const board = await client.getBoard();
+                logger.info("mcp tool succeeded", {
+                    tool: "getBoard",
+                    columnsCount: board.columns.length,
+                    swimlanesCount: board.swimlanes?.length ?? 0,
+                });
+                return {
+                    content: [
+                        {
+                            type: "text",
+                            text: JSON.stringify(board, null, 2),
                         },
-                    },
-                }),
-            };
-
-            return response;
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            logger.error("mcp tool failed", { tool: "getTasks", error: errorMessage, args });
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: `Error fetching tasks: ${errorMessage}`,
-                    },
-                ],
-                isError: true,
-            };
-        }
-    },
-);
-
-mcpServer.registerTool(
-    "getTaskById",
-    {
-        description: "Get a specific task by ID from Kanbanflow",
-        inputSchema: {
-            taskId: z.string().describe("The ID of the task to retrieve"),
-            includePosition: z.boolean().optional().describe("Include the task's position in the column"),
-            resolveUsers: z.boolean().optional().describe("Resolve user IDs to names"),
-        },
-    },
-    async (args) => {
-        try {
-            logger.info("mcp tool invoked", { tool: "getTaskById", taskId: args.taskId });
-            let task = await client.getTaskById(args.taskId, args.includePosition ?? false);
-
-            // Resolve user IDs if requested
-            if (args.resolveUsers) {
-                task = await userResolver.enrichTask(task);
-                logger.info("mcp data enriched with users", { tool: "getTaskById" });
+                    ],
+                };
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                logger.error("mcp tool failed", { tool: "getBoard", error: errorMessage });
+                return {
+                    content: [
+                        {
+                            type: "text",
+                            text: `Error fetching board: ${errorMessage}`,
+                        },
+                    ],
+                    isError: true,
+                };
             }
-
-            logger.info("mcp tool succeeded", {
-                tool: "getTaskById",
-                taskId: args.taskId,
-                taskName: task.name,
-                usersResolved: args.resolveUsers ?? false,
-            });
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: JSON.stringify(task, null, 2),
-                    },
-                ],
-            };
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            logger.error("mcp tool failed", {
-                tool: "getTaskById",
-                error: errorMessage,
-                taskId: args.taskId,
-            });
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: `Error fetching task ${args.taskId}: ${errorMessage}`,
-                    },
-                ],
-                isError: true,
-            };
-        }
-    },
-);
-
-mcpServer.registerTool(
-    "getUsers",
-    {
-        description: "Get all users on the board from Kanbanflow",
-        inputSchema: {},
-    },
-    async () => {
-        try {
-            logger.info("mcp tool invoked", { tool: "getUsers" });
-            const users = await client.getUsers();
-            logger.info("mcp tool succeeded", {
-                tool: "getUsers",
-                userCount: users.length,
-            });
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: JSON.stringify(users, null, 2),
-                    },
-                ],
-            };
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            logger.error("mcp tool failed", { tool: "getUsers", error: errorMessage });
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: `Error fetching users: ${errorMessage}`,
-                    },
-                ],
-                isError: true,
-            };
-        }
-    },
-);
-
-mcpServer.registerTool(
-    "getComments",
-    {
-        description: "Get all comments for a specific task from Kanbanflow",
-        inputSchema: {
-            taskId: z.string().describe("The ID of the task to get comments for"),
-            resolveUsers: z.boolean().optional().describe("Resolve user IDs to names"),
         },
-    },
-    async (args) => {
-        try {
-            logger.info("mcp tool invoked", { tool: "getComments", taskId: args.taskId });
-            let comments = await client.getComments(args.taskId);
+    );
 
-            // Resolve user IDs if requested
-            if (args.resolveUsers) {
-                comments = await userResolver.enrichComments(comments);
-                logger.info("mcp data enriched with users", { tool: "getComments" });
+    server.registerTool(
+        "getTasks",
+        {
+            description:
+                "Get tasks from Kanbanflow. Without filters, returns all tasks. Use filters to narrow results or enable pagination.",
+            inputSchema: {
+                columnId: z.string().optional().describe("Filter by column ID"),
+                columnName: z.string().optional().describe("Filter by column name"),
+                columnIndex: z.number().optional().describe("Filter by column index (0-based)"),
+                startTaskId: z.string().optional().describe("Task ID to start pagination from (use nextTaskId from previous response)"),
+                startGroupingDate: z.string().optional().describe(
+                    "Start date for date-grouped columns (YYYY-MM-DD format, cannot be combined with startTaskId)",
+                ),
+                limit: z.number().optional().describe("Maximum number of tasks to return (enables pagination)"),
+                order: z.enum(["asc", "desc"]).optional().describe("Sort order (asc or desc)"),
+                includePosition: z.boolean().optional().describe("Include task position in the column"),
+                resolveUsers: z.boolean().optional().describe("Resolve user IDs to names"),
+            },
+        },
+        async (args) => {
+            try {
+                logger.info("mcp tool invoked", { tool: "getTasks", args });
+
+                let tasks = await client.getTasks({
+                    columnId: args.columnId,
+                    columnName: args.columnName,
+                    columnIndex: args.columnIndex,
+                    startTaskId: args.startTaskId,
+                    startGroupingDate: args.startGroupingDate,
+                    limit: args.limit,
+                    order: args.order,
+                    includePosition: args.includePosition,
+                });
+
+                // Resolve user IDs if requested
+                if (args.resolveUsers) {
+                    tasks = await userResolver.enrichTasks(tasks);
+                    logger.info("mcp data enriched with users", { tool: "getTasks" });
+                }
+
+                const totalTasks = tasks.reduce((sum, col) => sum + col.tasks.length, 0);
+                const hasMore = tasks.some((col) => col.tasksLimited);
+                const nextTaskId = tasks.find((col) => col.nextTaskId)?.nextTaskId;
+
+                // Check if any filtering is applied
+                const hasFilters = args.columnId || args.columnName || args.columnIndex !== undefined;
+
+                logger.info("mcp tool succeeded", {
+                    tool: "getTasks",
+                    columnsCount: tasks.length,
+                    totalTasks,
+                    hasMore,
+                    nextTaskId,
+                    hasFilters,
+                    usersResolved: args.resolveUsers ?? false,
+                });
+
+                const response = {
+                    content: [
+                        {
+                            type: "text" as const,
+                            text: JSON.stringify(tasks, null, 2),
+                        },
+                    ],
+                    ...(hasFilters && {
+                        _meta: {
+                            pagination: {
+                                hasMore,
+                                nextTaskId: nextTaskId || null,
+                                totalReturned: totalTasks,
+                                limit: args.limit || null,
+                                columnId: args.columnId || null,
+                                columnName: args.columnName || null,
+                                columnIndex: args.columnIndex !== undefined ? args.columnIndex : null,
+                            },
+                        },
+                    }),
+                };
+
+                return response;
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                logger.error("mcp tool failed", { tool: "getTasks", error: errorMessage, args });
+                return {
+                    content: [
+                        {
+                            type: "text",
+                            text: `Error fetching tasks: ${errorMessage}`,
+                        },
+                    ],
+                    isError: true,
+                };
             }
+        },
+    );
 
-            logger.info("mcp tool succeeded", {
-                tool: "getComments",
-                taskId: args.taskId,
-                commentCount: comments.length,
-                usersResolved: args.resolveUsers ?? false,
-            });
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: JSON.stringify(comments, null, 2),
-                    },
-                ],
-            };
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            logger.error("mcp tool failed", {
-                tool: "getComments",
-                error: errorMessage,
-                taskId: args.taskId,
-            });
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: `Error fetching comments for task ${args.taskId}: ${errorMessage}`,
-                    },
-                ],
-                isError: true,
-            };
-        }
-    },
-);
+    server.registerTool(
+        "getTaskById",
+        {
+            description: "Get a specific task by ID from Kanbanflow",
+            inputSchema: {
+                taskId: z.string().describe("The ID of the task to retrieve"),
+                includePosition: z.boolean().optional().describe("Include the task's position in the column"),
+                resolveUsers: z.boolean().optional().describe("Resolve user IDs to names"),
+            },
+        },
+        async (args) => {
+            try {
+                logger.info("mcp tool invoked", { tool: "getTaskById", taskId: args.taskId });
+                let task = await client.getTaskById(args.taskId, args.includePosition ?? false);
+
+                // Resolve user IDs if requested
+                if (args.resolveUsers) {
+                    task = await userResolver.enrichTask(task);
+                    logger.info("mcp data enriched with users", { tool: "getTaskById" });
+                }
+
+                logger.info("mcp tool succeeded", {
+                    tool: "getTaskById",
+                    taskId: args.taskId,
+                    taskName: task.name,
+                    usersResolved: args.resolveUsers ?? false,
+                });
+                return {
+                    content: [
+                        {
+                            type: "text",
+                            text: JSON.stringify(task, null, 2),
+                        },
+                    ],
+                };
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                logger.error("mcp tool failed", {
+                    tool: "getTaskById",
+                    error: errorMessage,
+                    taskId: args.taskId,
+                });
+                return {
+                    content: [
+                        {
+                            type: "text",
+                            text: `Error fetching task ${args.taskId}: ${errorMessage}`,
+                        },
+                    ],
+                    isError: true,
+                };
+            }
+        },
+    );
+
+    server.registerTool(
+        "getUsers",
+        {
+            description: "Get all users on the board from Kanbanflow",
+            inputSchema: {},
+        },
+        async () => {
+            try {
+                logger.info("mcp tool invoked", { tool: "getUsers" });
+                const users = await client.getUsers();
+                logger.info("mcp tool succeeded", {
+                    tool: "getUsers",
+                    userCount: users.length,
+                });
+                return {
+                    content: [
+                        {
+                            type: "text",
+                            text: JSON.stringify(users, null, 2),
+                        },
+                    ],
+                };
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                logger.error("mcp tool failed", { tool: "getUsers", error: errorMessage });
+                return {
+                    content: [
+                        {
+                            type: "text",
+                            text: `Error fetching users: ${errorMessage}`,
+                        },
+                    ],
+                    isError: true,
+                };
+            }
+        },
+    );
+
+    server.registerTool(
+        "getComments",
+        {
+            description: "Get all comments for a specific task from Kanbanflow",
+            inputSchema: {
+                taskId: z.string().describe("The ID of the task to get comments for"),
+                resolveUsers: z.boolean().optional().describe("Resolve user IDs to names"),
+            },
+        },
+        async (args) => {
+            try {
+                logger.info("mcp tool invoked", { tool: "getComments", taskId: args.taskId });
+                let comments = await client.getComments(args.taskId);
+
+                // Resolve user IDs if requested
+                if (args.resolveUsers) {
+                    comments = await userResolver.enrichComments(comments);
+                    logger.info("mcp data enriched with users", { tool: "getComments" });
+                }
+
+                logger.info("mcp tool succeeded", {
+                    tool: "getComments",
+                    taskId: args.taskId,
+                    commentCount: comments.length,
+                    usersResolved: args.resolveUsers ?? false,
+                });
+                return {
+                    content: [
+                        {
+                            type: "text",
+                            text: JSON.stringify(comments, null, 2),
+                        },
+                    ],
+                };
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                logger.error("mcp tool failed", {
+                    tool: "getComments",
+                    error: errorMessage,
+                    taskId: args.taskId,
+                });
+                return {
+                    content: [
+                        {
+                            type: "text",
+                            text: `Error fetching comments for task ${args.taskId}: ${errorMessage}`,
+                        },
+                    ],
+                    isError: true,
+                };
+            }
+        },
+    );
+}

@@ -13,7 +13,7 @@ LABEL org.opencontainers.image.revision="${MCP_SERVER_COMMIT}"
 WORKDIR /app
 
 ENV DENO_DIR="/deno" \
-    MCP_SERVER_HOST="0.0.0.0" \
+    MCP_SERVER_HOST="::" \
     MCP_SERVER_VERSION="${MCP_SERVER_VERSION}"
 
 COPY deno.jsonc deno.lock ./
