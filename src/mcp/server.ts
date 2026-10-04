@@ -11,6 +11,7 @@ export const mcpServer = new McpServer({
 
 export const mcpRouter = new Hono();
 const transport = new StreamableHTTPTransport();
+let connection: Promise<void> | undefined;
 
 // Authentication middleware
 mcpRouter.use(async (c: Context, next) => {
@@ -39,8 +40,7 @@ mcpRouter.use(async (c: Context, next) => {
 });
 
 mcpRouter.all("/mcp", async (c: Context) => {
-    if (!mcpServer.isConnected()) {
-        await mcpServer.connect(transport);
-    }
+    connection ??= mcpServer.connect(transport);
+    await connection;
     return transport.handleRequest(c);
 });
